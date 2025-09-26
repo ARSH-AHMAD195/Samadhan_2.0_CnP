@@ -6,9 +6,10 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 load_dotenv()
+conn_username = os.getenv("MongoDB_UserName")
 conn_pass = os.getenv("MongoDb_Pass")
 
-uri = f"mongodb+srv://omanan8226:{conn_pass}@learningapp.ttccv4n.mongodb.net/"
+uri = f"mongodb+srv://{conn_username}:{conn_pass}@learningapp.ttccv4n.mongodb.net/"
 
 class ChatDBEngine:
     def __init__(self, uri, db_name="chat_db", collection="messages"):
