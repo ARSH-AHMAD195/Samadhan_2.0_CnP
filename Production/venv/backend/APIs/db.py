@@ -1,15 +1,19 @@
 from pymongo import MongoClient
 from datetime import datetime
 from dotenv import load_dotenv
+from groq import Groq
 import os
-from fastapi import FastAPI
-from pydantic import BaseModel
-from fastapi.middleware.cors import CORSMiddleware
-load_dotenv()
-conn_username = os.getenv("MongoDB_UserName")
-conn_pass = os.getenv("MongoDb_Pass")
 
-uri = f"mongodb+srv://{conn_username}:{conn_pass}@learningapp.ttccv4n.mongodb.net/"
+
+load_dotenv()
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+client = Groq(api_key=GROQ_API_KEY)
+
+
+password = os.getenv("MONGODB_PASS")
+username = os.getenv("MONGODB_USERNAME")
+
+uri = f"mongodb+srv://{username}:{password}@learningapp.ttccv4n.mongodb.net/"
 
 class ChatDBEngine:
     def __init__(self, uri, db_name="chat_db", collection="messages"):
@@ -46,40 +50,17 @@ class ChatDBEngine:
         return result.deleted_count
 
 
-engine = ChatDBEngine(uri)
-app = FastAPI()
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins = ["*"],
-    allow_methods = ["*"],
-    allow_credentials = True,
-    allow_headers = ["*"]
-)
+engine = ChatDBEngine(uri)  
 
-
-class ChatRequest(BaseModel):
-    user: str
-    message: str
-    response: str
+def save_chat(**chat):
+    chat_id = engine.save_messages(chat["user"], chat["message"], chat["res"])
+    print(f"status: success, {chat_id}")
     
-class UserQuery(BaseModel):
-    user: str
-    limit: int = 10
-    
-
-@app.post("/save_db")
-async def save_chat(chat: ChatRequest):
-    chat_id = engine.save_messages(chat.user, chat.message, chat.response)
-    return {"status": "success", "id": chat_id}
-    
-    
-@app.post("/db_history")
-async def get_history(query: UserQuery):
-    chats = engine.get_history(user=query.user, limit=query.limit)
-    return {"history": chats}
+def get_history(**query):
+    chats = engine.get_history(user=query["user"], limit=query["limit"])
+    print(f"history: {chats}")
 
 
-@app.delete("/clear_history")
-async def clear_history(query: UserQuery):
-    deleted = engine.clear_history(user=query.user)
-    return {"status": "success", "deleted_count": deleted}
+def clear_history(*query):
+    deleted = engine.clear_history(user=query[0])
+    print(f"status: success, deleted_count: {deleted}")
